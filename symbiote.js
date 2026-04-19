@@ -1,97 +1,139 @@
-// Board Gen Symbiote — v0.0.1 skeleton
+// Board Gen Symbiote — v0.1
+// Feature 1: search Talestavern and send slabs to the GM's hand.
 //
-// Procedural board generator for TaleSpire. This file is a stub: the generators
-// run entirely in-Symbiote to produce a grid of (tile-id, x, y, z) placements,
-// and the final `placeTiles` step hands them to the TaleSpire Symbiote API.
-//
-// Nothing here is wired to real TS API calls yet — we need to confirm the
-// tile-placement surface before writing against it.
+// Talestavern is a WordPress site with no public REST API; search is scraped
+// from the HTML search page, and each slab page embeds its slab string in a
+// <textarea class="code">. CORS is open (`access-control-allow-origin: *`),
+// so the Symbiote can fetch directly with no proxy.
+
+const TT_ORIGIN = "https://talestavern.com";
+const SLUG_BLOCKLIST = new Set(["page"]); // non-slab paths under /slab/...
 
 const $ = (id) => document.getElementById(id);
-const status = (msg) => { $("status").textContent = msg; };
-
-// ---------- seeded RNG ----------
-
-function xmur3(str) {
-  let h = 1779033703 ^ str.length;
-  for (let i = 0; i < str.length; i++) {
-    h = Math.imul(h ^ str.charCodeAt(i), 3432918353);
-    h = (h << 13) | (h >>> 19);
-  }
-  return () => {
-    h = Math.imul(h ^ (h >>> 16), 2246822507);
-    h = Math.imul(h ^ (h >>> 13), 3266489909);
-    return (h ^= h >>> 16) >>> 0;
-  };
-}
-
-function mulberry32(a) {
-  return () => {
-    a |= 0; a = (a + 0x6D2B79F5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-function rngFromSeed(seedStr) {
-  const s = seedStr || String(Math.random());
-  return mulberry32(xmur3(s)());
-}
-
-// ---------- generators ----------
-
-const generators = {
-  dungeon(w, h, rng) {
-    // Placeholder: carves N random rooms and connects them with L-shaped
-    // corridors. Returns a 2D array where 1 = floor, 0 = wall.
-    const grid = Array.from({ length: h }, () => new Array(w).fill(0));
-    const rooms = [];
-    const n = 5 + Math.floor(rng() * 5);
-    for (let i = 0; i < n; i++) {
-      const rw = 3 + Math.floor(rng() * 6);
-      const rh = 3 + Math.floor(rng() * 6);
-      const rx = 1 + Math.floor(rng() * (w - rw - 2));
-      const ry = 1 + Math.floor(rng() * (h - rh - 2));
-      for (let y = ry; y < ry + rh; y++) for (let x = rx; x < rx + rw; x++) grid[y][x] = 1;
-      rooms.push({ cx: rx + (rw >> 1), cy: ry + (rh >> 1) });
-    }
-    for (let i = 1; i < rooms.length; i++) {
-      const a = rooms[i - 1], b = rooms[i];
-      const [x0, x1] = a.cx < b.cx ? [a.cx, b.cx] : [b.cx, a.cx];
-      const [y0, y1] = a.cy < b.cy ? [a.cy, b.cy] : [b.cy, a.cy];
-      for (let x = x0; x <= x1; x++) grid[a.cy][x] = 1;
-      for (let y = y0; y <= y1; y++) grid[y][b.cx] = 1;
-    }
-    return grid;
-  },
+const status = (msg, cls) => {
+  const el = $("status");
+  el.textContent = msg;
+  el.className = cls || "";
 };
 
-// ---------- placement ----------
-// TODO: map grid cells to TaleSpire tile content-pack UUIDs, then call the
-// Symbiote tile-placement API for each cell. This needs API verification
-// before implementing — see README.
+const slabCache = new Map(); // slug -> slabString
 
-async function placeTiles(grid) {
-  // Placeholder: for now just report the stats.
-  const floors = grid.flat().filter((v) => v === 1).length;
-  status(`Generated ${grid[0].length} x ${grid.length} board, ${floors} floor tiles. (Placement not wired up yet.)`);
+// ---------- Talestavern ----------
+
+async function searchTalestavern(query) {
+  const url = `${TT_ORIGIN}/?s=${encodeURIComponent(query)}&post_type=slab`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`search HTTP ${res.status}`);
+  const html = await res.text();
+  const doc = new DOMParser().parseFromString(html, "text/html");
+
+  const seen = new Set();
+  const results = [];
+  for (const a of doc.querySelectorAll('a[href*="/slab/"]')) {
+    const href = a.getAttribute("href") || "";
+    const m = href.match(/^https?:\/\/talestavern\.com\/slab\/([^\/?#]+)\/?(?:$|[?#])/);
+    if (!m) continue;
+    const slug = m[1];
+    if (SLUG_BLOCKLIST.has(slug) || seen.has(slug)) continue;
+    seen.add(slug);
+    const title = (a.textContent || "").trim() || slug;
+    results.push({ slug, title, url: `${TT_ORIGIN}/slab/${slug}/` });
+  }
+  return results;
 }
 
-// ---------- wire-up ----------
+async function fetchSlabString(slug) {
+  if (slabCache.has(slug)) return slabCache.get(slug);
+  const res = await fetch(`${TT_ORIGIN}/slab/${slug}/`);
+  if (!res.ok) throw new Error(`slab page HTTP ${res.status}`);
+  const html = await res.text();
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  const ta = doc.querySelector("textarea.code") || doc.querySelector('textarea[class*="code"]');
+  if (!ta) throw new Error("slab string not found on page");
+  const slab = (ta.value || ta.textContent || "").trim();
+  if (!slab) throw new Error("slab string empty");
+  slabCache.set(slug, slab);
+  return slab;
+}
 
-$("generate").addEventListener("click", async () => {
-  const w = parseInt($("width").value, 10);
-  const h = parseInt($("height").value, 10);
-  const seed = $("seed").value.trim();
-  const gen = $("generator").value;
-  const rng = rngFromSeed(seed);
-  try {
-    const grid = generators[gen](w, h, rng);
-    await placeTiles(grid);
-  } catch (e) {
-    status(`Generate failed: ${e.message}`);
+// ---------- TaleSpire ----------
+
+async function sendSlabToHand(slabString) {
+  if (typeof TS === "undefined" || !TS.slabs) {
+    throw new Error("TaleSpire API not available — is this running inside TaleSpire?");
   }
-});
+  await TS.slabs.sendSlabToHand(slabString);
+}
 
-status("Ready. Enter params and click Generate.");
+// ---------- UI ----------
+
+function renderResults(results) {
+  const el = $("results");
+  el.innerHTML = "";
+  if (!results.length) {
+    status("No slabs matched.");
+    return;
+  }
+  for (const r of results) {
+    const row = document.createElement("div");
+    row.className = "result";
+    const title = document.createElement("div");
+    title.className = "title";
+    const link = document.createElement("a");
+    link.href = r.url;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    link.textContent = r.title;
+    title.appendChild(link);
+    const btn = document.createElement("button");
+    btn.textContent = "Send to hand";
+    btn.addEventListener("click", () => onSend(r, btn));
+    row.appendChild(title);
+    row.appendChild(btn);
+    el.appendChild(row);
+  }
+  status(`${results.length} result${results.length === 1 ? "" : "s"}. Click "Send to hand" to load a slab.`);
+}
+
+async function onSearch() {
+  const q = $("query").value.trim();
+  if (!q) { status("Enter a search term.", "warn"); return; }
+  $("search").disabled = true;
+  status(`Searching for "${q}"...`);
+  try {
+    const results = await searchTalestavern(q);
+    renderResults(results);
+  } catch (e) {
+    status(`Search failed: ${e.message}`, "warn");
+  } finally {
+    $("search").disabled = false;
+  }
+}
+
+async function onSend(result, btn) {
+  btn.disabled = true;
+  const original = btn.textContent;
+  btn.textContent = "…";
+  try {
+    const slab = await fetchSlabString(result.slug);
+    await sendSlabToHand(slab);
+    status(`Sent "${result.title}" to your hand. Click in TaleSpire to place.`);
+    btn.textContent = "Sent";
+  } catch (e) {
+    const msg = String(e.message || e);
+    if (msg.includes("clientIsNotInGmMode")) {
+      status(`"${result.title}": slabs can only be placed by the GM.`, "warn");
+    } else if (msg.includes("notInBoard")) {
+      status(`"${result.title}": open a board first.`, "warn");
+    } else if (msg.includes("dataOversized")) {
+      status(`"${result.title}": slab exceeds TaleSpire's size limit.`, "warn");
+    } else {
+      status(`Failed to send "${result.title}": ${msg}`, "warn");
+    }
+    btn.textContent = original;
+    btn.disabled = false;
+  }
+}
+
+$("search").addEventListener("click", onSearch);
+$("search-form").addEventListener("submit", onSearch);

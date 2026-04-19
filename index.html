@@ -6,26 +6,29 @@
     <style>
       body { font: 13px system-ui, sans-serif; margin: 0; padding: 12px; background: #1b1b1f; color: #ddd; }
       h1 { font-size: 14px; margin: 0 0 10px; }
-      label { display: block; margin: 8px 0 2px; font-size: 12px; color: #bbb; }
-      input, select { width: 100%; padding: 6px; background: #2a2a30; color: #ddd; border: 1px solid #444; border-radius: 4px; box-sizing: border-box; }
-      button { display: block; width: 100%; padding: 8px; margin: 12px 0 0; background: #2d6cdf; color: white; border: 0; border-radius: 4px; cursor: pointer; }
-      #status { margin-top: 10px; font-size: 12px; color: #9a9; white-space: pre-wrap; }
+      .row { display: flex; gap: 6px; }
+      input { flex: 1; padding: 6px; background: #2a2a30; color: #ddd; border: 1px solid #444; border-radius: 4px; }
+      button { padding: 6px 10px; background: #2d6cdf; color: white; border: 0; border-radius: 4px; cursor: pointer; }
+      button.secondary { background: #3a3a42; }
+      button:disabled { opacity: 0.5; cursor: not-allowed; }
+      #results { margin-top: 10px; display: flex; flex-direction: column; gap: 4px; }
+      .result { padding: 6px 8px; background: #23232a; border-radius: 4px; display: flex; gap: 6px; align-items: center; }
+      .result .title { flex: 1; font-size: 12px; }
+      .result .title a { color: #9ec7ff; text-decoration: none; }
+      .result .title a:hover { text-decoration: underline; }
+      .result button { font-size: 11px; padding: 4px 8px; }
+      #status { margin-top: 10px; font-size: 12px; color: #9a9; white-space: pre-wrap; min-height: 1.2em; }
+      .warn { color: #e8b; }
     </style>
   </head>
   <body>
-    <h1>Board Gen</h1>
-    <label>Generator</label>
-    <select id="generator">
-      <option value="dungeon">Dungeon (rooms + corridors)</option>
-    </select>
-    <label>Width (tiles)</label>
-    <input id="width" type="number" value="30" min="5" max="200" />
-    <label>Height (tiles)</label>
-    <input id="height" type="number" value="30" min="5" max="200" />
-    <label>Seed (blank = random)</label>
-    <input id="seed" type="text" placeholder="e.g. 'crypt-42'" />
-    <button id="generate">Generate</button>
-    <div id="status"></div>
-    <script src="symbiote.js?v=1"></script>
+    <h1>Board Gen — Talestavern search</h1>
+    <form id="search-form" class="row" onsubmit="return false">
+      <input id="query" type="text" placeholder="search slabs, e.g. 'crypt'" autofocus />
+      <button id="search">Search</button>
+    </form>
+    <div id="results"></div>
+    <div id="status">Enter a query and press Search. Slabs land on your cursor; click in TaleSpire to place (GM only).</div>
+    <script src="symbiote.js?v=2"></script>
   </body>
 </html>

@@ -1,19 +1,27 @@
 # TaleSpire Board Gen
 
-A TaleSpire Symbiote for procedurally generating boards (dungeons, caves, etc.) and placing tiles via the Symbiote API.
+A TaleSpire Symbiote for working with slabs. First feature: search Talestavern and send slabs directly to the GM's hand.
 
-**Status:** skeleton. The grid-generation side works; the TaleSpire tile-placement API is not yet wired up.
+**Status:** v0.1 — Talestavern search shipped. Restyle and procedural generation still to come.
 
-## Planned generators
+## Features
 
-- `dungeon` — rooms connected by L-shaped corridors (stub exists).
-- _future:_ caves (cellular automata), towns, overworld.
+### 1. Talestavern search (shipped)
+- Type a query; the Symbiote scrapes `talestavern.com/?s=<q>&post_type=slab`.
+- Click **Send to hand** on a result; the slab string is fetched from its page and handed to TaleSpire via `TS.slabs.sendSlabToHand`.
+- GM only (TaleSpire gates slab placement).
+
+### 2. Restyle (planned)
+Paste a slab, map source UUIDs to target UUIDs from your installed content packs, send the restyled slab to your hand.
+
+### 3. Procedural generation (planned)
+Dungeon / cave generators produce a slab from scratch.
 
 ## Files
 
 - `manifest.json` — Symbiote metadata
-- `index.html` — parameter panel
-- `symbiote.js` — seeded RNG, generators, placement stub
+- `index.html` — search UI
+- `symbiote.js` — search/fetch/send logic
 
 ## Local dev
 
@@ -21,16 +29,16 @@ A TaleSpire Symbiote for procedurally generating boards (dungeons, caves, etc.) 
 python3 -m http.server 8080
 ```
 
-Then add `http://localhost:8080` as a custom Symbiote URL in TaleSpire.
+Add `http://localhost:8080` as a custom Symbiote URL in TaleSpire. Note that outside of TaleSpire the panel renders but **Send to hand** will fail since `TS.*` isn't defined.
 
 ## Hosting via GitHub Pages
 
-Push and enable Pages on `main` / root. Symbiote URL: `https://<user>.github.io/boardgen-talespire/`.
+Push to `main`, enable Pages on `main` / root. Symbiote URL: `https://<user>.github.io/boardgen-talespire/`.
 
-Bump the `?v=N` query string in `index.html` when pushing a new `symbiote.js` so browsers re-fetch.
+When updating `symbiote.js`, bump the `?v=N` query in `index.html` so browsers re-fetch.
 
-## Next steps
+## API notes
 
-1. Confirm the TaleSpire Symbiote tile-placement API (method name, accepted tile IDs, coord system).
-2. Map generator output (2D `0/1` grid) to concrete tile content-pack UUIDs.
-3. Replace the `placeTiles` stub in `symbiote.js`.
+- Docs: `symbiote-docs.talespire.com/api_doc_v0_1.md.html`
+- Slab format: `github.com/Bouncyrock/DumbSlabStats/blob/master/format.md`
+- Talestavern has no REST API; search is HTML-scraped. CORS is open (`access-control-allow-origin: *`) so direct `fetch` works with no proxy.
