@@ -1,0 +1,31 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Board Gen</title>
+    <style>
+      body { font: 13px system-ui, sans-serif; margin: 0; padding: 12px; background: #1b1b1f; color: #ddd; }
+      h1 { font-size: 14px; margin: 0 0 10px; }
+      label { display: block; margin: 8px 0 2px; font-size: 12px; color: #bbb; }
+      input, select { width: 100%; padding: 6px; background: #2a2a30; color: #ddd; border: 1px solid #444; border-radius: 4px; box-sizing: border-box; }
+      button { display: block; width: 100%; padding: 8px; margin: 12px 0 0; background: #2d6cdf; color: white; border: 0; border-radius: 4px; cursor: pointer; }
+      #status { margin-top: 10px; font-size: 12px; color: #9a9; white-space: pre-wrap; }
+    </style>
+  </head>
+  <body>
+    <h1>Board Gen</h1>
+    <label>Generator</label>
+    <select id="generator">
+      <option value="dungeon">Dungeon (rooms + corridors)</option>
+    </select>
+    <label>Width (tiles)</label>
+    <input id="width" type="number" value="30" min="5" max="200" />
+    <label>Height (tiles)</label>
+    <input id="height" type="number" value="30" min="5" max="200" />
+    <label>Seed (blank = random)</label>
+    <input id="seed" type="text" placeholder="e.g. 'crypt-42'" />
+    <button id="generate">Generate</button>
+    <div id="status"></div>
+    <script src="symbiote.js?v=1"></script>
+  </body>
+</html>

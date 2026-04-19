@@ -1,0 +1,9 @@
+{
+  "name": "Board Gen",
+  "description": "Procedurally generate TaleSpire boards.",
+  "author": "xapicella",
+  "version": "0.0.1",
+  "main": "index.html",
+  "width": 360,
+  "height": 560
+}
