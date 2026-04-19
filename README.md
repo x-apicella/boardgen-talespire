@@ -2,7 +2,7 @@
 
 A TaleSpire Symbiote for working with slabs. First feature: search Talestavern and send slabs directly to the GM's hand.
 
-**Status:** v0.1 — Talestavern search shipped. Restyle and procedural generation still to come.
+**Status:** v0.2 — Search + Restyle shipped. Procedural generation still to come.
 
 ## Features
 
@@ -11,8 +11,12 @@ A TaleSpire Symbiote for working with slabs. First feature: search Talestavern a
 - Click **Send to hand** on a result; the slab string is fetched from its page and handed to TaleSpire via `TS.slabs.sendSlabToHand`.
 - GM only (TaleSpire gates slab placement).
 
-### 2. Restyle (planned)
-Paste a slab, map source UUIDs to target UUIDs from your installed content packs, send the restyled slab to your hand.
+### 2. Restyle (shipped)
+- Paste a slab (TaleSpire Ctrl+C output, or from Talestavern, or anywhere else) and click **Analyze**.
+- Each unique asset kind in the slab is listed with its name, thumbnail, and placement count.
+- For any row, type in the "replace with" field — installed tiles and props from your content packs appear as suggestions (format: `name · pack [shortId]`).
+- Click **Send restyled slab**: matching UUIDs are overwritten in the binary, the slab is repacked via `TS.slabs.pack`, and handed to you.
+- **Caveat:** the swap preserves coords and rotation, not footprint. If the replacement tile has a different `colliderBoundsBound` than the original, geometry will misalign.
 
 ### 3. Procedural generation (planned)
 Dungeon / cave generators produce a slab from scratch.
