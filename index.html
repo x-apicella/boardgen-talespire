@@ -6,29 +6,72 @@
     <style>
       body { font: 13px system-ui, sans-serif; margin: 0; padding: 12px; background: #1b1b1f; color: #ddd; }
       h1 { font-size: 14px; margin: 0 0 10px; }
+      .tabs { display: flex; gap: 4px; margin-bottom: 12px; border-bottom: 1px solid #333; }
+      .tab { padding: 6px 12px; background: transparent; color: #9aa; border: 0; border-bottom: 2px solid transparent; cursor: pointer; font: inherit; }
+      .tab.active { color: #fff; border-bottom-color: #2d6cdf; }
       .row { display: flex; gap: 6px; }
-      input { flex: 1; padding: 6px; background: #2a2a30; color: #ddd; border: 1px solid #444; border-radius: 4px; }
-      button { padding: 6px 10px; background: #2d6cdf; color: white; border: 0; border-radius: 4px; cursor: pointer; }
+      input, textarea { padding: 6px; background: #2a2a30; color: #ddd; border: 1px solid #444; border-radius: 4px; font: inherit; box-sizing: border-box; }
+      input { flex: 1; }
+      textarea { width: 100%; resize: vertical; font-family: ui-monospace, monospace; font-size: 11px; }
+      button { padding: 6px 10px; background: #2d6cdf; color: white; border: 0; border-radius: 4px; cursor: pointer; font: inherit; }
       button.secondary { background: #3a3a42; }
       button:disabled { opacity: 0.5; cursor: not-allowed; }
+      label { display: block; margin: 8px 0 4px; font-size: 12px; color: #bbb; }
+
+      /* search */
       #results { margin-top: 10px; display: flex; flex-direction: column; gap: 4px; }
       .result { padding: 6px 8px; background: #23232a; border-radius: 4px; display: flex; gap: 6px; align-items: center; }
       .result .title { flex: 1; font-size: 12px; }
       .result .title a { color: #9ec7ff; text-decoration: none; }
       .result .title a:hover { text-decoration: underline; }
       .result button { font-size: 11px; padding: 4px 8px; }
-      #status { margin-top: 10px; font-size: 12px; color: #9a9; white-space: pre-wrap; min-height: 1.2em; }
+
+      /* restyle */
+      #restyle-layouts { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+      .layout-row { display: grid; grid-template-columns: auto 1fr auto 1fr; gap: 6px; align-items: center; padding: 6px; background: #23232a; border-radius: 4px; }
+      .layout-row .thumb { width: 28px; height: 28px; background: #111; border-radius: 3px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+      .layout-row .thumb img, .layout-row .thumb canvas { width: 100%; height: 100%; object-fit: contain; }
+      .layout-row .info { min-width: 0; }
+      .layout-row .name { font-size: 12px; color: #ddd; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .layout-row .count { font-size: 11px; color: #888; }
+      .layout-row .arrow { color: #666; }
+      .layout-row input { font-size: 11px; }
+      .layout-row.unknown .name { color: #e88; }
+      #restyle-actions { display: flex; gap: 6px; margin-top: 10px; }
+
+      #status { margin-top: 12px; font-size: 12px; color: #9a9; white-space: pre-wrap; min-height: 1.2em; }
       .warn { color: #e8b; }
     </style>
   </head>
   <body>
-    <h1>Board Gen — Talestavern search</h1>
-    <form id="search-form" class="row" onsubmit="return false">
-      <input id="query" type="text" placeholder="search slabs, e.g. 'crypt'" autofocus />
-      <button id="search">Search</button>
-    </form>
-    <div id="results"></div>
+    <h1>Board Gen</h1>
+
+    <div class="tabs">
+      <button class="tab active" data-panel="search">Search</button>
+      <button class="tab" data-panel="restyle">Restyle</button>
+    </div>
+
+    <div id="panel-search" class="panel">
+      <form id="search-form" class="row" onsubmit="return false">
+        <input id="query" type="text" placeholder="search slabs, e.g. 'crypt'" autofocus />
+        <button id="search">Search</button>
+      </form>
+      <div id="results"></div>
+    </div>
+
+    <div id="panel-restyle" class="panel" hidden>
+      <label>Paste slab string</label>
+      <textarea id="restyle-input" rows="4" placeholder="paste a slab string here (TaleSpire copy-slab output or from Talestavern)"></textarea>
+      <div id="restyle-actions">
+        <button id="restyle-analyze">Analyze</button>
+        <button id="restyle-apply" class="secondary" disabled>Send restyled slab</button>
+      </div>
+      <div id="restyle-layouts"></div>
+      <datalist id="asset-options"></datalist>
+    </div>
+
     <div id="status">Enter a query and press Search. Slabs land on your cursor; click in TaleSpire to place (GM only).</div>
-    <script src="symbiote.js?v=2"></script>
+
+    <script src="symbiote.js?v=3"></script>
   </body>
 </html>
